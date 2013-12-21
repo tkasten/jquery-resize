@@ -9,8 +9,8 @@
 
 // Script: jQuery resize event
 //
-// *Version: 1.1, Last updated: 3/14/2010*
 // 
+// *Version: 1.1, Last updated: 12/21/2013*
 // Project Home - http://benalman.com/projects/jquery-resize-plugin/
 // GitHub       - http://github.com/cowboy/jquery-resize/
 // Source       - http://github.com/cowboy/jquery-resize/raw/master/jquery.ba-resize.js
@@ -213,34 +213,53 @@
         handleObj.handler = new_handler;
       }
     }
-    
+
   };
-  
+
+  function fixBadElements() { //Fix: Added
+      var tempElems = $([]);
+      for(var i = 0; i < elems.length; i++) {
+        try {
+          elems[i] == undefined;
+          tempElems = tempElems.add(elems[i]);
+        } catch(e) {
+        } //discard bad reference (not unbound properly)
+      }
+      return tempElems;
+  }
+
   function loopy() {
-    
+
     // Start the polling loop, asynchronously.
     timeout_id = window[ str_setTimeout ](function(){
-      
+
       // Iterate over all elements to which the 'resize' event is bound.
-      elems.each(function(){
-        var elem = $(this),
-          width = elem.width(),
-          height = elem.height(),
-          data = $.data( this, str_data );
-        
-        // If element size has changed since the last time, update the element
-        // data store and trigger the 'resize' event.
-        if ( width !== data.w || height !== data.h ) {
-          elem.trigger( str_resize, [ data.w = width, data.h = height ] );
-        }
-        
-      });
-      
+      try{
+            elems.each(function(){
+              var elem = $(this);
+              try { //Fix: Added
+                var width = elem.width(),
+                  height = elem.height(),
+                  data = $.data( this, str_data );
+
+                // If element size has changed since the last time, update the element
+                // data store and trigger the 'resize' event.
+                if ( width !== data.w || height !== data.h ) {
+                  elem.trigger( str_resize, [ data.w = width, data.h = height ] );
+                }
+              } catch(e) { //Fix: ensure that vanished elem does not cause problem
+                console.log("Vanished element!");
+              }
+            });
+      } catch(e1) {
+        elems = fixBadElements();
+        console.log("Fixed bad elements.Reason: "+ e1.message);
+      }
+
       // Loop.
       loopy();
       
     }, jq_resize[ str_delay ] );
-    
+
   };
-  
 })(jQuery,this);
